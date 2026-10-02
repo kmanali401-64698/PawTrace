@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@/app/generated/prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET(
     req: Request,
@@ -13,7 +11,7 @@ export async function GET(
         where: { qrCode },
         include: {
             owner: {
-                select: { name: true, email: true },
+                select: { name: true, email: true, phone: true },
             },
         },
     });
@@ -28,8 +26,11 @@ export async function GET(
         breed: pet.breed,
         species: pet.species,
         age: pet.age,
+        photoUrl: pet.photoUrl,
+        publicNotes: pet.publicNotes,
         isLost: pet.isLost,
         ownerName: pet.owner.name,
         ownerEmail: pet.owner.email,
+        ownerPhone: pet.owner.phone,
     });
 }

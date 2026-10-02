@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PrismaClient } from "@/app/generated/prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function PATCH(
     req: Request,
@@ -15,7 +13,12 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { isLost } = await req.json();
+    const body = await req.json().catch(() => null);
+    const isLost = body?.isLost;
+
+    if (typeof isLost !== "boolean") {
+        return NextResponse.json({ error: "isLost must be true or false" }, { status: 400 });
+    }
 
     const pet = await prisma.pet.findUnique({ where: { id } });
 
@@ -23,7 +26,7 @@ export async function PATCH(
         return NextResponse.json({ error: "Pet not found" }, { status: 404 });
     }
 
-    if (pet.ownerId !== (session.user as any).id) {
+    if (pet.ownerId !== session.user.id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

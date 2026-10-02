@@ -1,9 +1,7 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PrismaClient } from "@/app/generated/prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     providers: [
@@ -17,7 +15,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 if (!credentials?.email || !credentials?.password) return null;
 
                 const user = await prisma.user.findUnique({
-                    where: { email: credentials.email as string },
+                    where: { email: String(credentials.email).trim().toLowerCase() },
                 });
 
                 if (!user) return null;
@@ -39,18 +37,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     session: { strategy: "jwt" },
+    // Needed when the app is opened via a LAN IP or deployed behind a proxy (not just localhost)
+    trustHost: true,
     callbacks: {
         async jwt({ token, user }) {
             if (user) {
-                token.role = (user as any).role;
-                token.id = (user as any).id;
+                token.role = user.role;
+                token.id = user.id;
             }
             return token;
         },
         async session({ session, token }) {
             if (session.user) {
-                (session.user as any).role = token.role;
-                (session.user as any).id = token.id;
+                session.user.role = token.role ?? "";
+                session.user.id = token.id ?? "";
             }
             return session;
         },
