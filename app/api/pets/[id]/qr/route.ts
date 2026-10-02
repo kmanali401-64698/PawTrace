@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { PrismaClient } from "@/app/generated/prisma/client";
 import QRCode from "qrcode";
-
-const prisma = new PrismaClient();
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { getPublicBaseUrl } from "@/lib/app-url";
 
 export async function GET(
     req: Request,
@@ -23,14 +22,28 @@ export async function GET(
         return NextResponse.json({ error: "Pet not found" }, { status: 404 });
     }
 
-    if (pet.ownerId !== (session.user as any).id) {
+    if (pet.ownerId !== session.user.id) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // The URL the QR code will point to — the public scan page
-    const scanUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/pet/${pet.qrCode}`;
+    // The URL the QR code points to — the public scan page
+    const { baseUrl, reachableFromPhones } = getPublicBaseUrl(req);
+    const scanUrl = `${baseUrl}/pet/${pet.qrCode}`;
 
-    const qrImageDataUrl = await QRCode.toDataURL(scanUrl);
+    // High error correction so a scratched or partly covered tag still scans
+    const options = {
+        errorCorrectionLevel: "H" as const,
+        margin: 2,
+        color: { dark: "#2E3D28", light: "#FFFFFF" },
+    };
 
-    return NextResponse.json({ qrImage: qrImageDataUrl, scanUrl });
+    const [qrImage, qrSvg] = await Promise.all([
+        QRCode.toDataURL(scanUrl, { ...options, width: 720 }),
+        QRCode.toString(scanUrl, { ...options, type: "svg" }),
+    ]);
+
+    return NextResponse.json(
+        { qrImage, qrSvg, scanUrl, reachableFromPhones, secure: scanUrl.startsWith("https://") },
+        { headers: { "Cache-Control": "no-store" } }
+    );
 }

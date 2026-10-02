@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { PrismaClient } from "@/app/generated/prisma/client";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req: Request) {
     const session = await auth();
@@ -11,16 +9,20 @@ export async function GET(req: Request) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if ((session.user as any).role !== "vet") {
+    if (session.user.role !== "vet") {
         return NextResponse.json({ error: "Only vets can search" }, { status: 403 });
     }
 
     const url = new URL(req.url);
-    const query = url.searchParams.get("query") || "";
+    let query = (url.searchParams.get("query") || "").trim();
 
     if (!query) {
         return NextResponse.json([]);
     }
+
+    // Accept a full scan URL pasted from a tag, e.g. https://.../pet/abc123
+    const fromUrl = query.match(/\/pet\/([^/?#\s]+)/);
+    if (fromUrl) query = fromUrl[1];
 
     const pets = await prisma.pet.findMany({
         where: {
@@ -29,7 +31,13 @@ export async function GET(req: Request) {
                 { qrCode: query },
             ],
         },
-        include: {
+        select: {
+            id: true,
+            name: true,
+            breed: true,
+            species: true,
+            age: true,
+            photoUrl: true,
             owner: { select: { name: true, email: true } },
         },
         take: 10,

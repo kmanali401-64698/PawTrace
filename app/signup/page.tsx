@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function SignupPage() {
     const [name, setName] = useState("");
@@ -12,7 +13,8 @@ export default function SignupPage() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    async function handleSignup() {
+    async function handleSignup(e: React.FormEvent<HTMLFormElement>) {
+        e.preventDefault();
         setLoading(true);
         setError("");
 
@@ -22,7 +24,7 @@ export default function SignupPage() {
             body: JSON.stringify({ name, email, password, role }),
         });
 
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
         setLoading(false);
 
         if (!res.ok) {
@@ -41,11 +43,13 @@ export default function SignupPage() {
                     <p className="text-sm text-matcha/60 mt-1">Create your account</p>
                 </div>
 
-                <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
+                <form onSubmit={handleSignup} className="bg-white rounded-2xl shadow-sm p-6 space-y-4">
                     <div>
                         <label className="text-sm text-matcha/80 mb-1 block">Name</label>
                         <input
                             type="text"
+                            required
+                            autoComplete="name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             className="w-full rounded-xl border border-sage-light/40 px-4 py-2.5 outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition"
@@ -57,6 +61,8 @@ export default function SignupPage() {
                         <label className="text-sm text-matcha/80 mb-1 block">Email</label>
                         <input
                             type="email"
+                            required
+                            autoComplete="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full rounded-xl border border-sage-light/40 px-4 py-2.5 outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition"
@@ -68,10 +74,13 @@ export default function SignupPage() {
                         <label className="text-sm text-matcha/80 mb-1 block">Password</label>
                         <input
                             type="password"
+                            required
+                            minLength={8}
+                            autoComplete="new-password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             className="w-full rounded-xl border border-sage-light/40 px-4 py-2.5 outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition"
-                            placeholder="••••••••"
+                            placeholder="At least 8 characters"
                         />
                     </div>
 
@@ -108,19 +117,19 @@ export default function SignupPage() {
                     )}
 
                     <button
-                        onClick={handleSignup}
+                        type="submit"
                         disabled={loading}
                         className="w-full bg-sage hover:bg-sage/90 text-white font-medium rounded-xl py-2.5 transition disabled:opacity-60"
                     >
                         {loading ? "Creating account..." : "Sign up"}
                     </button>
-                </div>
+                </form>
 
                 <p className="text-center text-sm text-matcha/60 mt-6">
                     Already have an account?{" "}
-                    <a href="/login" className="text-sage font-medium hover:underline">
+                    <Link href="/login" className="text-sage font-medium hover:underline">
                         Log in
-                    </a>
+                    </Link>
                 </p>
             </div>
         </div>

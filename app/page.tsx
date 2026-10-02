@@ -12,15 +12,15 @@ export default function HomePage() {
     if (status === "loading") return;
 
     if (!session) {
-      router.push("/login");
+      router.replace("/login");
       return;
     }
 
-    const role = (session.user as any)?.role;
+    const role = session.user?.role;
     if (role === "vet") {
-      router.push("/vet");
+      router.replace("/vet");
     } else {
-      router.push("/dashboard");
+      router.replace("/dashboard");
     }
   }, [session, status, router]);
 

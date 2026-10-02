@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@/app/generated/prisma/client";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
-    const { email, password, name, role } = await req.json();
+    const body = await req.json().catch(() => null);
+    const name = typeof body?.name === "string" ? body.name.trim() : "";
+    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body?.password === "string" ? body.password : "";
+    const role = body?.role;
 
     if (!email || !password || !name || !role) {
         return NextResponse.json(
@@ -17,6 +19,17 @@ export async function POST(req: Request) {
     if (role !== "owner" && role !== "vet") {
         return NextResponse.json(
             { error: "Role must be 'owner' or 'vet'" },
+            { status: 400 }
+        );
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return NextResponse.json({ error: "Please enter a valid email" }, { status: 400 });
+    }
+
+    if (password.length < 8) {
+        return NextResponse.json(
+            { error: "Password must be at least 8 characters" },
             { status: 400 }
         );
     }
