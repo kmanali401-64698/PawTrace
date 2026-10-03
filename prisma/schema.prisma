@@ -9,15 +9,18 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
+  id        String         @id @default(cuid())
+  email     String         @unique
   password  String
   name      String
   role      String // "owner" or "vet"
   phone     String?
-  pets      Pet[]    @relation("OwnerPets")
-  reports   Report[] @relation("VetReports")
-  createdAt DateTime @default(now())
+  clinic    String? // vets only: clinic / hospital name shown to owners
+  pets      Pet[]          @relation("OwnerPets")
+  reports   Report[]       @relation("VetReports")
+  vetAccess PetVetAccess[] @relation("AccessVet")
+  referrals PetVetAccess[] @relation("AccessReferrer")
+  createdAt DateTime       @default(now())
 }
 
 model Pet {
@@ -40,6 +43,7 @@ model Pet {
   reports     Report[]
   scanLogs    ScanLog[]
   messages    FinderMessage[]
+  vetAccess   PetVetAccess[]
   createdAt   DateTime        @default(now())
 }
 
@@ -81,4 +85,26 @@ model FinderMessage {
   createdAt DateTime @default(now())
 
   @@index([petId, createdAt])
+}
+
+// Which vets may see a pet's medical history and add reports. The owner decides:
+// vets request access (pending) and the owner approves/denies; owners can add a vet
+// directly; a vet who already has access can refer the pet to another vet. The owner
+// can revoke any vet at any time.
+model PetVetAccess {
+  id           String    @id @default(cuid())
+  petId        String
+  pet          Pet       @relation(fields: [petId], references: [id], onDelete: Cascade)
+  vetId        String
+  vet          User      @relation("AccessVet", fields: [vetId], references: [id], onDelete: Cascade)
+  status       String // "pending" | "approved" | "denied" | "revoked"
+  source       String // "request" (vet asked) | "owner" (owner added) | "referral" (another vet referred)
+  referredById String?
+  referredBy   User?     @relation("AccessReferrer", fields: [referredById], references: [id], onDelete: SetNull)
+  note         String?
+  createdAt    DateTime  @default(now())
+  decidedAt    DateTime?
+
+  @@unique([petId, vetId])
+  @@index([vetId, status])
 }

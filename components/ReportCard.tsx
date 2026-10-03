@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { vetName } from "@/lib/format";
 
 export type Report = {
     id: string;
@@ -12,7 +13,7 @@ export type Report = {
     aiSummarized: boolean;
     nextVisit: string | null;
     createdAt: string;
-    vet: { name: string };
+    vet: { name: string; clinic?: string | null; email?: string };
 };
 
 function lines(value: string | null) {
@@ -57,7 +58,8 @@ export default function ReportCard({
         <article className="bg-cream rounded-xl p-4">
             <div className="flex items-start justify-between gap-3">
                 <p className="text-xs text-matcha/50">
-                    {formatDate(report.createdAt)} · Dr. {report.vet?.name}
+                    {formatDate(report.createdAt)} · {vetName(report.vet?.name)}
+                    {report.vet?.clinic && <span className="text-matcha/40"> · {report.vet.clinic}</span>}
                 </p>
                 {report.aiSummarized ? (
                     <span className="text-[10px] uppercase tracking-wide font-semibold text-sage bg-sage/10 rounded-full px-2 py-0.5 shrink-0">

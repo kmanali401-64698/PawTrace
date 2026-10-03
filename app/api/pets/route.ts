@@ -46,7 +46,12 @@ export async function GET() {
         where: { ownerId: session.user.id },
         orderBy: { createdAt: "desc" },
         include: {
-            _count: { select: { messages: { where: { read: false } } } },
+            _count: {
+                select: {
+                    messages: { where: { read: false } },
+                    vetAccess: { where: { status: "pending" } },
+                },
+            },
             reports: {
                 where: { nextVisit: { gte: startOfToday } },
                 orderBy: { nextVisit: "asc" },
@@ -60,6 +65,7 @@ export async function GET() {
         pets.map(({ _count, reports, ...pet }) => ({
             ...pet,
             unreadMessages: _count.messages,
+            pendingVetRequests: _count.vetAccess,
             upcomingVisit: reports[0] ?? null,
         }))
     );

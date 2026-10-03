@@ -10,7 +10,7 @@ export async function GET() {
 
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
-        select: { name: true, email: true, phone: true, role: true },
+        select: { name: true, email: true, phone: true, role: true, clinic: true },
     });
 
     return user
@@ -29,6 +29,8 @@ export async function PATCH(req: Request) {
     const name = typeof body?.name === "string" ? body.name.trim().slice(0, 80) : "";
     const rawPhone = typeof body?.phone === "string" ? body.phone.trim() : "";
     const phone = rawPhone.replace(/[^\d+]/g, "");
+    // Vets: clinic name shown to owners (undefined = leave unchanged)
+    const clinic = typeof body?.clinic === "string" ? body.clinic.trim().slice(0, 100) || null : undefined;
 
     if (!name) {
         return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -43,8 +45,12 @@ export async function PATCH(req: Request) {
 
     const user = await prisma.user.update({
         where: { id: session.user.id },
-        data: { name, phone: phone || null },
-        select: { name: true, email: true, phone: true, role: true },
+        data: {
+            name,
+            phone: phone || null,
+            ...(session.user.role === "vet" && clinic !== undefined && { clinic }),
+        },
+        select: { name: true, email: true, phone: true, role: true, clinic: true },
     });
 
     return NextResponse.json(user);

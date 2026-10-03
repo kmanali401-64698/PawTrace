@@ -16,6 +16,7 @@ type Pet = {
     photoUrl: string | null;
     isLost: boolean;
     unreadMessages: number;
+    pendingVetRequests: number;
     upcomingVisit: { nextVisit: string; diagnosis: string | null } | null;
 };
 
@@ -264,6 +265,11 @@ export default function DashboardPage() {
                                     {pet.isLost && (
                                         <span className="text-xs font-medium text-terracotta bg-terracotta/10 rounded-full px-3 py-1">
                                             Lost
+                                        </span>
+                                    )}
+                                    {pet.pendingVetRequests > 0 && (
+                                        <span className="text-xs font-medium text-matcha bg-pink/60 rounded-full px-3 py-1">
+                                            🩺 {pet.pendingVetRequests} vet request{pet.pendingVetRequests > 1 ? "s" : ""}
                                         </span>
                                     )}
                                     {pet.unreadMessages > 0 && (

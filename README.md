@@ -16,6 +16,7 @@ Built as a practical project exploring how AI tools can be used throughout the d
 - 🚨 **Lost pet mode** — scans of a lost pet's tag capture the finder's location
 - 🗺️ **Location map** — owners see every scan and finder report on an interactive OpenStreetMap map
 - 🩺 **AI vet reports** — vets write shorthand notes; AI turns them into a plain-language summary, medication schedule, home-care tips and next visit date
+- 🩺 **Owner-controlled vet access** — vets must request access (or be referred by a vet the owner approved); owners approve, decline or remove vets at any time and see which vet and clinic wrote each report
 - 📅 **Upcoming visits** — follow-up dates from vet reports appear on the owner's dashboard
 - 🔒 **Privacy-first design** — medical history and scan locations are only visible to the owner (and vets for reports); the public page shows contact details only
 
@@ -73,6 +74,21 @@ npm run dev
 Open [http://localhost:3000](http://localhost:3000) to see the app running. 🎉
 
 **Testing QR scans with your phone:** while developing, QR codes automatically point to your computer's Wi-Fi address (e.g. `http://192.168.1.5:3000`) so a phone on the same Wi-Fi can open them. If the phone can't connect, allow Node.js through Windows Firewall for private networks. Browsers only share location over HTTPS, so location sharing from phones works once the app is deployed (or through an HTTPS tunnel).
+
+---
+
+## 🌐 Deploying (needed for QR tags to work on every phone)
+
+The local dev server only speaks plain `http://`, so tag links made on your laptop don't open reliably in Safari / Samsung Internet, only work on your Wi-Fi, and can't ask finders for their location. Deploying gives PawTrace a real `https://` address:
+
+1. Push this repo to GitHub.
+2. Go to [vercel.com](https://vercel.com), sign in with GitHub, click **Add New → Project** and import `PawTrace`.
+3. Under **Environment Variables** add `DATABASE_URL`, `AUTH_SECRET` and `GEMINI_API_KEY` (same values as your `.env`).
+4. Click **Deploy**. Vercel runs `npm run vercel-build`, which generates the Prisma client and builds the app.
+5. Open your new `https://…vercel.app` address, log in, and print your pets' tags from there — QR codes now point to the secure address.
+6. Optional: set `NEXT_PUBLIC_APP_URL=https://your-app.vercel.app` (in Vercel **and** your local `.env`) so tags printed from `localhost` also use the secure address.
+
+Database migrations are applied separately with `npx prisma migrate deploy` (already done for the current Neon database).
 
 ---
 

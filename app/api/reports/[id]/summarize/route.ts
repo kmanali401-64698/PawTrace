@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { summarizeVetNotes } from "@/lib/summarize";
+import { vetHasApprovedAccess, VET_PUBLIC_FIELDS } from "@/lib/access";
 
 // Re-run the AI summary for an existing report (e.g. after Gemini was overloaded)
 export async function POST(
@@ -21,7 +22,7 @@ export async function POST(
     const { id } = await params;
     const report = await prisma.report.findUnique({ where: { id }, include: { pet: true } });
 
-    if (!report) {
+    if (!report || !(await vetHasApprovedAccess(report.petId, session.user.id))) {
         return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
@@ -37,7 +38,7 @@ export async function POST(
     const updated = await prisma.report.update({
         where: { id },
         data: ai,
-        include: { vet: { select: { name: true } } },
+        include: { vet: { select: VET_PUBLIC_FIELDS } },
     });
 
     return NextResponse.json(updated);
