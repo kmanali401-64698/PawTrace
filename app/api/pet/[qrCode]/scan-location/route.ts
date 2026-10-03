@@ -16,9 +16,6 @@ export async function POST(
 ) {
     const { qrCode } = await params;
     const body = await req.json().catch(() => null);
-    const lat = toCoord(body?.lat, 90);
-    const lng = toCoord(body?.lng, 180);
-    const hasLocation = lat !== null && lng !== null;
     const scanId = typeof body?.scanId === "string" ? body.scanId : null;
 
     const pet = await prisma.pet.findUnique({ where: { qrCode } });
@@ -26,6 +23,12 @@ export async function POST(
     if (!pet) {
         return NextResponse.json({ error: "Pet not found" }, { status: 404 });
     }
+
+    // The scan is always logged (so the owner notices unexpected scans), but the
+    // scanner's location is only collected while the pet is reported lost
+    const lat = pet.isLost ? toCoord(body?.lat, 90) : null;
+    const lng = pet.isLost ? toCoord(body?.lng, 180) : null;
+    const hasLocation = lat !== null && lng !== null;
 
     let id: string;
 

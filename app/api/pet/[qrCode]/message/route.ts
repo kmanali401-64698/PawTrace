@@ -11,7 +11,17 @@ function text(value: unknown, max: number) {
     return typeof value === "string" ? value.trim().slice(0, max) : "";
 }
 
-// Public: someone who scanned the tag leaves a message for the owner
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/** A phone number (7–15 digits, optional +) or an email address; null if neither. */
+function normalizeContact(raw: string) {
+    if (EMAIL_RE.test(raw)) return raw.toLowerCase();
+    const digits = raw.replace(/[^\d+]/g, "");
+    return /^\+?\d{7,15}$/.test(digits) ? raw : null;
+}
+
+// Public: someone who scanned the tag leaves a message for the owner.
+// Name and a reachable contact are required so the owner knows who found their pet.
 export async function POST(
     req: Request,
     { params }: { params: Promise<{ qrCode: string }> }
@@ -20,12 +30,18 @@ export async function POST(
     const body = await req.json().catch(() => null);
 
     const message = text(body?.message, 1000);
-    const name = text(body?.name, 80) || null;
-    const contact = text(body?.contact, 120) || null;
-    const lat = toCoord(body?.lat, 90);
-    const lng = toCoord(body?.lng, 180);
-    const hasLocation = lat !== null && lng !== null;
+    const name = text(body?.name, 80);
+    const contact = normalizeContact(text(body?.contact, 120));
 
+    if (name.length < 2) {
+        return NextResponse.json({ error: "Please enter your name so the owner knows who you are" }, { status: 400 });
+    }
+    if (!contact) {
+        return NextResponse.json(
+            { error: "Please enter a valid phone number (with country code) or email so the owner can reach you" },
+            { status: 400 }
+        );
+    }
     if (!message) {
         return NextResponse.json({ error: "Please write a message" }, { status: 400 });
     }
@@ -34,6 +50,11 @@ export async function POST(
     if (!pet) {
         return NextResponse.json({ error: "Pet not found" }, { status: 404 });
     }
+
+    // Finder locations are only collected for pets that are reported lost
+    const lat = pet.isLost ? toCoord(body?.lat, 90) : null;
+    const lng = pet.isLost ? toCoord(body?.lng, 180) : null;
+    const hasLocation = lat !== null && lng !== null;
 
     // Basic flood protection: at most 10 messages per pet per hour
     const recent = await prisma.finderMessage.count({
