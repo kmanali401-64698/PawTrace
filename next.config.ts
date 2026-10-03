@@ -11,11 +11,6 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: lanAddresses,
   // Hide the "N" dev-tools button in the corner (compile/runtime errors are still shown)
   devIndicators: false,
-  // Make sure Prisma's query engine (generated next to the client) ships with every
-  // API route when deployed, e.g. on Vercel
-  outputFileTracingIncludes: {
-    "/api/**": ["./app/generated/prisma/**/*.node"],
-  },
 };
 
 export default nextConfig;

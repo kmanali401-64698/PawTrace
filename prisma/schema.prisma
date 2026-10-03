@@ -1,6 +1,9 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../app/generated/prisma"
+  provider   = "prisma-client"
+  output     = "../app/generated/prisma"
+  // Rust-free client: queries go through the `pg` driver (lib/prisma.ts), so there is
+  // no native query-engine file to ship (Vercel failed to bundle it).
+  engineType = "client"
 }
 
 datasource db {
