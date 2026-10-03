@@ -378,8 +378,18 @@ export default function PetDetailPage() {
                 {/* QR tag */}
                 <div className="bg-white rounded-2xl shadow-sm p-6 mt-4">
                     <h2 className="font-medium text-matcha mb-1">PawTrace Tag</h2>
-                    <p className="text-sm text-matcha/60 mb-4">
-                        Print this and attach it to {pet.name}&apos;s collar. Anyone who scans it sees your contact details — never medical history.
+                    <p className="text-sm text-matcha/60 mb-2">
+                        Print this and attach it to {pet.name}&apos;s collar. Medical history is never shown to people who scan it.
+                    </p>
+                    <p
+                        className={
+                            "text-xs rounded-lg px-3 py-2 mb-4 " +
+                            (pet.isLost ? "bg-terracotta/10 text-terracotta" : "bg-sage/10 text-matcha/70")
+                        }
+                    >
+                        {pet.isLost
+                            ? `🔓 ${pet.name} is marked lost: anyone who scans the tag sees your name, phone, email and note, and is asked to share their location.`
+                            : `🔒 ${pet.name} isn't marked lost: scanning the tag only shows ${pet.name}'s name and photo. Finders can still send you an alert with their name and contact. Mark ${pet.name} as lost to show your contact details.`}
                     </p>
                     {qr ? (
                         <div className="flex flex-col sm:flex-row items-center gap-5">

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+// Public: what someone sees after scanning a tag.
+// The owner's contact details and note are only shared while the pet is marked lost.
+// Otherwise the finder sees just enough to recognise the pet and can alert the owner
+// through PawTrace (see ./message) without learning who or where the owner is.
 export async function GET(
     req: Request,
     { params }: { params: Promise<{ qrCode: string }> }
@@ -20,15 +24,23 @@ export async function GET(
         return NextResponse.json({ error: "Pet not found" }, { status: 404 });
     }
 
-    // Only return PUBLIC fields — never medical history here
-    return NextResponse.json({
+    const basics = {
         name: pet.name,
         breed: pet.breed,
         species: pet.species,
-        age: pet.age,
         photoUrl: pet.photoUrl,
-        publicNotes: pet.publicNotes,
         isLost: pet.isLost,
+    };
+
+    if (!pet.isLost) {
+        return NextResponse.json(basics);
+    }
+
+    // Only return PUBLIC fields — never medical history here
+    return NextResponse.json({
+        ...basics,
+        age: pet.age,
+        publicNotes: pet.publicNotes,
         ownerName: pet.owner.name,
         ownerEmail: pet.owner.email,
         ownerPhone: pet.owner.phone,
