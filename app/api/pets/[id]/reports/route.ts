@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { summarizeVetNotes } from "@/lib/summarize";
+import { canViewMedical, vetHasApprovedAccess, VET_PUBLIC_FIELDS } from "@/lib/access";
 
 export async function POST(
     req: Request,
@@ -40,6 +41,14 @@ export async function POST(
         return NextResponse.json({ error: "Pet not found" }, { status: 404 });
     }
 
+    // Owner consent: only vets the owner approved (or who were referred) can add reports
+    if (!(await vetHasApprovedAccess(id, session.user.id))) {
+        return NextResponse.json(
+            { error: "You need the owner's approval before adding reports for this pet." },
+            { status: 403 }
+        );
+    }
+
     // AI summarization step
     const ai = await summarizeVetNotes(rawNotes, pet);
 
@@ -50,7 +59,7 @@ export async function POST(
             rawNotes,
             ...ai,
         },
-        include: { vet: { select: { name: true } } },
+        include: { vet: { select: VET_PUBLIC_FIELDS } },
     });
 
     return NextResponse.json(report);
@@ -68,18 +77,15 @@ export async function GET(
 
     const { id } = await params;
 
-    // Medical history is private: only the pet's owner or a vet may read it
-    const pet = await prisma.pet.findUnique({ where: { id }, select: { ownerId: true } });
-    const allowed = pet && (pet.ownerId === session.user.id || session.user.role === "vet");
-
-    if (!allowed) {
+    // Medical history is private: only the owner and vets the owner approved may read it
+    if (!(await canViewMedical(session, id))) {
         return NextResponse.json({ error: "Pet not found" }, { status: 404 });
     }
 
     const reports = await prisma.report.findMany({
         where: { petId: id },
         orderBy: { createdAt: "desc" },
-        include: { vet: { select: { name: true } } },
+        include: { vet: { select: VET_PUBLIC_FIELDS } },
     });
 
     return NextResponse.json(reports);

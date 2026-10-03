@@ -8,6 +8,8 @@ import PetAvatar from "@/components/PetAvatar";
 import PetForm, { PetFormValues } from "@/components/PetForm";
 import ReportCard, { Report } from "@/components/ReportCard";
 import LocationMap, { MapPoint } from "@/components/LocationMap";
+import VetAccessPanel from "@/components/VetAccessPanel";
+import { vetName } from "@/lib/format";
 
 type Pet = PetFormValues & {
     id: string;
@@ -499,10 +501,19 @@ export default function PetDetailPage() {
                     )}
                 </div>
 
+                <VetAccessPanel petId={pet.id} petName={pet.name} />
+
                 <div className="bg-white rounded-2xl shadow-sm p-6 mt-4">
-                    <h2 className="font-medium text-matcha mb-3">Medical Reports</h2>
+                    <h2 className="font-medium text-matcha mb-1">Medical Reports</h2>
+                    {reports.length > 0 && (
+                        <p className="text-xs text-matcha/50 mb-3">
+                            Last checked by {vetName(reports[0].vet?.name)}
+                            {reports[0].vet?.clinic && ` (${reports[0].vet.clinic})`} on{" "}
+                            {new Date(reports[0].createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                    )}
                     {reports.length === 0 ? (
-                        <p className="text-sm text-matcha/60">No reports yet. Reports added by your vet will appear here.</p>
+                        <p className="text-sm text-matcha/60">No reports yet. Reports added by vets you approve will appear here.</p>
                     ) : (
                         <div className="space-y-3">
                             {reports.map((report) => (

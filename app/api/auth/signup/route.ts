@@ -8,6 +8,7 @@ export async function POST(req: Request) {
     const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
     const password = typeof body?.password === "string" ? body.password : "";
     const role = body?.role;
+    const clinic = typeof body?.clinic === "string" ? body.clinic.trim().slice(0, 100) || null : null;
 
     if (!email || !password || !name || !role) {
         return NextResponse.json(
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
-        data: { email, password: hashedPassword, name, role },
+        data: { email, password: hashedPassword, name, role, clinic: role === "vet" ? clinic : null },
     });
 
     return NextResponse.json({

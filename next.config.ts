@@ -9,6 +9,8 @@ const lanAddresses = Object.values(os.networkInterfaces())
 
 const nextConfig: NextConfig = {
   allowedDevOrigins: lanAddresses,
+  // Hide the "N" dev-tools button in the corner (compile/runtime errors are still shown)
+  devIndicators: false,
 };
 
 export default nextConfig;

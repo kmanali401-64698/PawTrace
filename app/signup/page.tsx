@@ -9,6 +9,7 @@ export default function SignupPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [role, setRole] = useState<"owner" | "vet">("owner");
+    const [clinic, setClinic] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -21,7 +22,7 @@ export default function SignupPage() {
         const res = await fetch("/api/auth/signup", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, email, password, role }),
+            body: JSON.stringify({ name, email, password, role, clinic }),
         });
 
         const data = await res.json().catch(() => ({}));
@@ -109,6 +110,21 @@ export default function SignupPage() {
                             </button>
                         </div>
                     </div>
+
+                    {role === "vet" && (
+                        <div>
+                            <label className="text-sm text-matcha/80 mb-1 block">Clinic / hospital</label>
+                            <input
+                                type="text"
+                                value={clinic}
+                                onChange={(e) => setClinic(e.target.value)}
+                                maxLength={100}
+                                className="w-full rounded-xl border border-sage-light/40 px-4 py-2.5 outline-none focus:border-sage focus:ring-2 focus:ring-sage/20 transition"
+                                placeholder="e.g. Happy Paws Veterinary Clinic"
+                            />
+                            <p className="text-xs text-matcha/50 mt-1">Shown to pet owners next to your name.</p>
+                        </div>
+                    )}
 
                     {error && (
                         <p className="text-sm text-terracotta bg-terracotta/10 rounded-lg px-3 py-2">
